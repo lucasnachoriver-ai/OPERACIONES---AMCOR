@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Operaciones AMCOR</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; cursor: pointer; }
+    input, select, button { margin: 5px; padding: 5px; }
+    .btn-eliminar { color: red; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>📦 Tablero de Operaciones</h1>
+
+  <!-- Botón para agregar varias filas -->
+  <button id="btnAgregar">➕ Agregar 5 operaciones</button>
+
+  <!-- Filtros -->
+  <label>Buscar por Nro. Orden: <input type="text" id="buscarOrden"></label>
+  <label>Proveedor:
+    <select id="filtroProveedor">
+      <option value="">Todos</option>
+      <option value="AMCOR FLEXIBLES CHINA CO.">AMCOR FLEXIBLES CHINA CO.</option>
+      <option value="FOLEX">FOLEX</option>
+      <option value="PERUPLAST">PERUPLAST</option>
+      <option value="NOVA CHEMICALS/AMCOR LLC">NOVA CHEMICALS/AMCOR LLC</option>
+    </select>
+  </label>
+
+  <!-- Tabla editable -->
+  <table id="tablaOperaciones">
+    <thead>
+      <tr>
+        <th>Nro. Orden</th>
+        <th>Proveedor</th>
+        <th>Responsable</th>
+        <th onclick="ordenarFecha()">Fecha de Arribo ⬍</th>
+        <th>Medio de Transporte</th>
+        <th>Destino</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const tabla = document.getElementById("tablaOperaciones").getElementsByTagName("tbody")[0];
+    const buscarOrden = document.getElementById("buscarOrden");
+    const filtroProveedor = document.getElementById("filtroProveedor");
+    let ordenAscendente = true;
+
+    // Función para agregar una fila editable
+    function agregarFila(op = {}) {
+      const row = tabla.insertRow();
+      row.innerHTML = `
+        <td><input type="text" value="${op.NroOrden || ""}"></td>
+        <td><input type="text" value="${op.Proveedor || ""}"></td>
+        <td><input type="text" value="${op.Responsable || ""}"></td>
+        <td><input type="date" value="${op.Fecha ? formatearFecha(op.Fecha) : ""}"></td>
+        <td><input type="text" value="${op.Transporte || ""}"></td>
+        <td><input type="text" value="${op.Destino || ""}"></td>
+        <td><span class="btn-eliminar" onclick="eliminarFila(this)">🗑️</span></td>
+      `;
+    }
+
+    // Agregar múltiples filas vacías
+    function agregarMultiplesFilas(cantidad) {
+      for (let i = 0; i < cantidad; i++) {
+        agregarFila();
+      }
+    }
+
+    // Conectar el botón
+    document.getElementById("btnAgregar").addEventListener("click", () => {
+      agregarMultiplesFilas(5);
+    });
+
+    // Eliminar fila
+    function eliminarFila(btn) {
+      const row = btn.closest("tr");
+      row.remove();
+    }
+
+    // Convertir fecha dd-mm-aa a yyyy-mm-dd
+    function formatearFecha(fecha) {
+      const partes = fecha.split("-");
+      if (partes.length === 3) {
+        return `20${partes[2]}-${partes[1]}-${partes[0]}`;
+      }
+      return "";
+    }
+
+    // Ordenar por fecha de arribo (ascendente ↔ descendente)
+    function ordenarFecha() {
+      const filas = Array.from(tabla.rows);
+      filas.sort((a, b) => {
+        const fechaA = new Date(a.cells[3].querySelector("input").value);
+        const fechaB = new Date(b.cells[3].querySelector("input").value);
+        return ordenAscendente ? fechaA - fechaB : fechaB - fechaA;
+      });
+      tabla.innerHTML = "";
+      filas.forEach(f => tabla.appendChild(f));
+      ordenAscendente = !ordenAscendente;
+    }
+
+    // Filtros
+    function filtrar() {
+      const orden = buscarOrden.value.toLowerCase();
+      const proveedor = filtroProveedor.value;
+
+      for (let row of tabla.rows) {
+        const nroOrden = row.cells[0].querySelector("input").value.toLowerCase();
+        const proveedorRow = row.cells[1].querySelector("input").value;
+
+        const matchOrden = nroOrden.includes(orden);
+        const matchProveedor = proveedor === "" || proveedorRow === proveedor;
+
+        row.style.display = (matchOrden && matchProveedor) ? "" : "none";
+      }
+    }
+
+    buscarOrden.addEventListener("input", filtrar);
+    filtroProveedor.addEventListener("change", filtrar);
+
+    // Ejemplo inicial
+    agregarFila({NroOrden:"4500052773",Proveedor:"AMCOR FLEXIBLES CHINA CO.",Responsable:"HIDALGO",Fecha:"02-10-26",Transporte:"AEREO",Destino:"EZEIZA"});
+    agregarFila({NroOrden:"4500053024",Proveedor:"NOVA CHEMICALS/AMCOR LLC",Responsable:"HIDALGO",Fecha:"18-10-26",Transporte:"MARITIMO",Destino:""});
+  </script>
+</body>
+</html>
